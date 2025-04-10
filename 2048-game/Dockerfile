@@ -16,3 +16,4 @@ EXPOSE 83
 
 # 🚀 Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
+# Triggering Jenkins rebuild
