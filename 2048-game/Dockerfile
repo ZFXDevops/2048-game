@@ -1,19 +1,9 @@
-# Use Nginx as the base image
-FROM nginx:alpine
+FROM jenkins/jenkins:lts
 
-# Set working directory to Nginx HTML folder
-WORKDIR /usr/share/nginx/html
+USER root
 
-# Install Git, remove default Nginx files, clone 2048, clean up
-RUN apk add --no-cache git && \
-    rm -rf ./* && \
-    git clone --depth=1 https://github.com/gabrielecirulli/2048.git . && \
-    rm -rf .git && \
-    apk del git
+RUN apt-get update && \
+    apt-get install -y docker.io && \
+    usermod -aG docker jenkins
 
-# Expose port 83
-EXPOSE 83
-
-# Start Nginx server
-CMD ["nginx", "-g", "daemon off;"]
-
+USER jenkins
