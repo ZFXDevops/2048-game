@@ -1,9 +1,18 @@
-FROM jenkins/jenkins:lts
+# 🔧 Base image
+FROM nginx:alpine
 
-USER root
+# 📁 Working directory
+WORKDIR /usr/share/nginx/html
 
-RUN apt-get update && \
-    apt-get install -y docker.io && \
-    usermod -aG docker jenkins
+# 🛠️ Clone 2048 game into Nginx folder
+RUN apk add --no-cache git && \
+    rm -rf ./* && \
+    git clone --depth=1 https://github.com/gabrielecirulli/2048.git . && \
+    rm -rf .git && \
+    apk del git
 
-USER jenkins
+# 🌐 Expose on custom port (optional, Nginx still listens on 80)
+EXPOSE 83
+
+# 🚀 Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
