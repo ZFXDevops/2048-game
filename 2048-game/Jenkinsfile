@@ -7,6 +7,15 @@ pipeline {
     }
 
     stages {
+        stage('Validate Files') {
+            steps {
+                dir("${env.WORKSPACE}") {
+                    sh 'echo "Current directory: $(pwd)"'
+                    sh 'ls -R'
+                }
+            }
+        }
+
         stage('Build Image & Generate Digest') {
             steps {
                 dir("${env.WORKSPACE}") {
