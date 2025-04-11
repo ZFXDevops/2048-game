@@ -9,19 +9,28 @@ pipeline {
     stages {
         stage('Build Image & Generate Digest') {
             steps {
-                sh './scripts/generate_digest.sh'
+                dir("${env.WORKSPACE}") {
+                    sh 'chmod +x scripts/generate_digest.sh'
+                    sh './scripts/generate_digest.sh'
+                }
             }
         }
 
         stage('Verify Image Digest') {
             steps {
-                sh './scripts/verify_digest.sh'
+                dir("${env.WORKSPACE}") {
+                    sh 'chmod +x scripts/verify_digest.sh'
+                    sh './scripts/verify_digest.sh'
+                }
             }
         }
 
         stage('Deploy Container') {
             steps {
-                sh 'docker run -d -p 8080:80 --name game2048 $IMAGE:$TAG'
+                dir("${env.WORKSPACE}") {
+                    sh 'docker rm -f game2048 || true'
+                    sh 'docker run -d -p 8080:80 --name game2048 "$IMAGE:$TAG"'
+                }
             }
         }
     }
