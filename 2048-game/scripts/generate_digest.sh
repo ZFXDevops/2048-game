@@ -1,21 +1,21 @@
 #!/bin/bash
-# scripts/generate_digest.sh
-
 set -e
 
-IMAGE_NAME="zavifx/2048-custom-image:latest"
+IMAGE="zavifx/2048-custom-image"
+TAG="latest"
+DIGEST_FILE="stored_checksums/image.digest"
 
-# Build the image
-docker build -t $IMAGE_NAME .
+echo "🔨 Building Docker image..."
+docker build -t $IMAGE:$TAG .
 
-# Get image digest
-DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $IMAGE_NAME)
+echo "📤 Pushing image to Docker Hub..."
+docker push $IMAGE:$TAG
 
-# Extract only the digest hash (after the @)
-CHECKSUM=$(echo "$DIGEST" | cut -d'@' -f2)
+echo "🔍 Extracting RepoDigest..."
+DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $IMAGE:$TAG)
 
-# Store checksum
+echo "💾 Saving digest to $DIGEST_FILE..."
 mkdir -p stored_checksums
-echo "$CHECKSUM" > stored_checksums/image_checksum.txt
+echo "$DIGEST" > "$DIGEST_FILE"
 
-echo "✅ Image built and digest stored: $CHECKSUM"
+echo "✅ Digest saved: $DIGEST"
