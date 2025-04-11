@@ -2,69 +2,46 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'zavifx/2048-custom-image'
-        IMAGE_TAG = 'latest'
-        CHECKSUM_FILE = 'image_checksum.txt'
+        IMAGE_NAME = "zavifx/2048-custom-image"
+        TAG = "latest"
     }
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG 2048-game'
+                sh 'docker build -t $IMAGE_NAME:$TAG .'
             }
         }
 
         stage('Generate Checksum') {
             steps {
-                sh 'docker save $IMAGE_NAME:$IMAGE_TAG | sha256sum > current_checksum.txt'
+                sh './scripts/generate_checksum.sh $IMAGE_NAME $TAG'
             }
         }
 
-        stage('Validate Checksum') {
+        stage('Verify Checksum') {
             steps {
-                script {
-                    def result = sh(script: "diff current_checksum.txt $CHECKSUM_FILE", returnStatus: true)
-                    if (result != 0) {
-                        error("❌ Checksum mismatch! Deployment halted. Image may have changed.")
-                    } else {
-                        echo "✅ Checksum matches. Proceeding with deployment..."
-                    }
-                }
+                sh './scripts/verify_checksum.sh $IMAGE_NAME $TAG'
             }
         }
 
-        stage('Deploy Application') {
-            when {
-                expression {
-                    return currentBuild.currentResult == 'SUCCESS'
-                }
-            }
+        stage('Push Docker Image') {
             steps {
-                echo '🚀 Deploying Docker image to Kubernetes...'
-                sh '''
-                    kubectl apply -f k8s/2048-deployment.yaml
-                    kubectl apply -f k8s/2048-service.yaml
-                '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh '''
+                    echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+                    docker push $IMAGE_NAME:$TAG
+                    '''
+                }
             }
         }
     }
 
     post {
-        always {
-            echo '🧹 Cleaning up...'
-            sh 'rm -f current_checksum.txt'
-        }
         failure {
-            echo '❌ Build failed due to checksum mismatch or other error.'
-        }
-        success {
-            echo '✅ Build and Kubernetes deployment successful.'
+            mail to: 'zavifx@gmail.com',
+                 subject: "❌ Jenkins Pipeline Failed",
+                 body: "The Jenkins job failed during checksum verification for $IMAGE_NAME:$TAG."
         }
     }
 }
