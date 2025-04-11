@@ -1,24 +1,24 @@
 #!/bin/bash
+set -e
 
 echo "🔍 Fetching current digest from Docker Hub..."
-actual_digest=$(docker inspect --format='{{index .RepoDigests 0}}' zavifx/2048-custom-image:latest | cut -d'@' -f2)
+digest=$(docker pull zavifx/2048-custom-image:latest --quiet | grep sha256)
 
+echo ""
 echo "📦 Stored digest:"
 stored_digest=$(cat stored_checksums/image.digest)
 echo "$stored_digest"
 
-# Extract only the SHA part from stored digest (strip repo name)
-stored_digest_sha=$(echo "$stored_digest" | cut -d'@' -f2)
+# Extract the actual sha256 value only (strip repo name if present)
+stored_sha=$(echo "$stored_digest" | awk -F'@' '{print $2}')
+actual_sha=$(echo "$digest" | grep -o 'sha256:[a-f0-9]\+')
 
-echo "🔍 Comparing digests..."
-echo "Expected: $stored_digest_sha"
-echo "Actual:   $actual_digest"
+echo "Expected: $stored_sha"
+echo "Actual:   $actual_sha"
 
-if [[ "$stored_digest_sha" == "$actual_digest" ]]; then
-    echo "✅ Digest match. Proceeding with deployment."
+if [ "$stored_sha" == "$actual_sha" ]; then
+  echo "✅ Digest match confirmed."
 else
-    echo "❌ Digest mismatch!"
-    echo "Expected: $stored_digest_sha"
-    echo "Actual:   $actual_digest"
-    exit 1
+  echo "❌ Digest mismatch!"
+  exit 1
 fi
