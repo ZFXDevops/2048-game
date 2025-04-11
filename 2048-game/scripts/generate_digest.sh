@@ -5,6 +5,9 @@ IMAGE="zavifx/2048-custom-image"
 TAG="latest"
 DIGEST_FILE="stored_checksums/image.digest"
 
+echo "🔐 Logging in to Docker Hub..."
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
 echo "🔨 Building Docker image..."
 docker build -t $IMAGE:$TAG .
 

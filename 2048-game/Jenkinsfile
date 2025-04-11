@@ -19,8 +19,10 @@ pipeline {
         stage('Build Image & Generate Digest') {
             steps {
                 dir("${env.WORKSPACE}/2048-game") {
-                    sh 'chmod +x scripts/generate_digest.sh'
-                    sh './scripts/generate_digest.sh'
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh 'chmod +x scripts/generate_digest.sh'
+                        sh './scripts/generate_digest.sh'
+                    }
                 }
             }
         }
