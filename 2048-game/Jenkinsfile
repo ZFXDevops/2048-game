@@ -2,46 +2,36 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "zavifx/2048-custom-image"
+        IMAGE = "zavifx/2048-custom-image"
         TAG = "latest"
     }
 
     stages {
-        stage('Build Docker Image') {
+        stage('Build Image & Generate Digest') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$TAG .'
+                sh './scripts/generate_digest.sh'
             }
         }
 
-        stage('Generate Checksum') {
+        stage('Verify Image Digest') {
             steps {
-                sh './scripts/generate_checksum.sh $IMAGE_NAME $TAG'
+                sh './scripts/verify_digest.sh'
             }
         }
 
-        stage('Verify Checksum') {
+        stage('Deploy Container') {
             steps {
-                sh './scripts/verify_checksum.sh $IMAGE_NAME $TAG'
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh '''
-                    echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
-                    docker push $IMAGE_NAME:$TAG
-                    '''
-                }
+                sh 'docker run -d -p 8080:80 --name game2048 $IMAGE:$TAG'
             }
         }
     }
 
     post {
         failure {
-            mail to: 'zavifx@gmail.com',
-                 subject: "❌ Jenkins Pipeline Failed",
-                 body: "Build or checksum verification failed for $IMAGE_NAME:$TAG."
+            echo '❌ Deployment failed due to checksum verification or another issue.'
+        }
+        success {
+            echo '✅ Game 2048 deployed successfully.'
         }
     }
 }
