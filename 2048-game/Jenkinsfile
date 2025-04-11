@@ -41,7 +41,7 @@ pipeline {
         failure {
             mail to: 'zavifx@gmail.com',
                  subject: "❌ Jenkins Pipeline Failed",
-                 body: "The Jenkins job failed during checksum verification for $IMAGE_NAME:$TAG."
+                 body: "Build or checksum verification failed for $IMAGE_NAME:$TAG."
         }
     }
 }
