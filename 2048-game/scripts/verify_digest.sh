@@ -1,28 +1,24 @@
 #!/bin/bash
-set -e
-
-IMAGE="zavifx/2048-custom-image"
-TAG="latest"
-DIGEST_FILE="stored_checksums/image.digest"
 
 echo "🔍 Fetching current digest from Docker Hub..."
-CURRENT_DIGEST=$(docker pull $IMAGE:$TAG | grep "Digest:" | awk '{print $2}')
-
-if [ ! -f "$DIGEST_FILE" ]; then
-    echo "❌ Error: Digest file '$DIGEST_FILE' not found!"
-    exit 1
-fi
+actual_digest=$(docker inspect --format='{{index .RepoDigests 0}}' zavifx/2048-custom-image:latest | cut -d'@' -f2)
 
 echo "📦 Stored digest:"
-cat "$DIGEST_FILE"
+stored_digest=$(cat stored_checksums/image.digest)
+echo "$stored_digest"
 
-STORED_DIGEST=$(cat "$DIGEST_FILE")
+# Extract only the SHA part from stored digest (strip repo name)
+stored_digest_sha=$(echo "$stored_digest" | cut -d'@' -f2)
 
-if [ "$CURRENT_DIGEST" != "$STORED_DIGEST" ]; then
-    echo "❌ Digest mismatch!"
-    echo "Expected: $STORED_DIGEST"
-    echo "Actual:   $CURRENT_DIGEST"
-    exit 1
+echo "🔍 Comparing digests..."
+echo "Expected: $stored_digest_sha"
+echo "Actual:   $actual_digest"
+
+if [[ "$stored_digest_sha" == "$actual_digest" ]]; then
+    echo "✅ Digest match. Proceeding with deployment."
 else
-    echo "✅ Digest verified: $CURRENT_DIGEST matches the stored checksum."
+    echo "❌ Digest mismatch!"
+    echo "Expected: $stored_digest_sha"
+    echo "Actual:   $actual_digest"
+    exit 1
 fi
