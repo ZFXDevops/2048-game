@@ -9,7 +9,7 @@ echo "[INFO] Saving Docker image $IMAGE_NAME:$TAG to a tar file for verification
 docker save ${IMAGE_NAME}:${TAG} -o temp_image.tar
 
 echo "[INFO] Comparing fingerprints..."
-GENERATED_CHECKSUM=$(sha256sum temp_image.tar | awk '{print $1}')
+GENERATED_CHECKSUM=$(shasum -a 256 temp_image.tar | awk '{print $1}')
 STORED_CHECKSUM=$(cat "$CHECKSUM_FILE")
 
 echo "[DEBUG] Generated: $GENERATED_CHECKSUM"
